@@ -2,7 +2,7 @@ import docx
 import matplotlib.pyplot as plt
 from collections import Counter
 
-lion = docx.Document('lion.docx') #берешь произведение
+lion = docx.Document('lion.docx') #берем произведение
 doc = docx.Document() #файл для вывода таблицы
 text = [] #бустой лист для того, чтобы добавить в него текст
 letters = ['а', 'б', 'в', 'г', 'д', 'е', 'ё', 'ж', 'з', 'и', 'й', 'к', 'л', 'м', 'н', 'о', 'п', 'р', 'с', 'т', 'у', 'ф', 'х', 'ц',
@@ -23,44 +23,29 @@ for paragraph in lion.paragraphs:
 text = '\n'.join(text) #делаем весь текст в одну строку
 text_word = text.lower() #в новую переменную добавляем текст только маленькими буквами
 text_word = text_word.split() #разбираем его на слова
-for i in range(len(text_word)): #создаем цикл, который будет проходить по всем словам
-    a = 0 #создаем переменную для подсчета пройденных строк
-    print(i)
 
-    word = text_word[i] #переменная будет каждый раз присваиваться новому слову
-    if len(word) == 1 and word[0] not in letters: #если длина слова и его состав неподходят под условие
-        continue #то сразу пропускаем его
-    if word[0] not in letters: #если первый элемент не входит в список
-        word = word[1:] #то удаляем его
-    if len(word) == 1 and word[0] not in letters: #если длина слова и его состав неподходят под условие
-        continue #то сразу пропускаем его
-    if word[-1] not in letters: #если последний элемент
-        word = word[:-1] #тоже удаляем
-    if len(word) == 1 and word[0] not in letters: #если длина слова и его состав неподходят под условие
-        continue #то сразу пропускаем его
-    if word[-1] not in letters: #и предпоследний 
-        word = word[:-1] 
-        #это делается для того, чтобы исключить поодобные ситуации " (слово), "
+filtered_words = [
+    word.strip(" ,.!?()[]{}'\"")  #удаляем пробелы и знаки препинания
+    for word in text_word #проходим по всем словам из списка
+    if len(word) > 0 and all(letter in letters for letter in word) #проверяем длину слова и все буквы, чтобы они входили в список допускаемых
+]
 
-    for row in table.rows: #перебираем каждую строку
+#считаем частоту уникальных слов
+word_counts = Counter(filtered_words)
 
-        if row.cells[0].text == word: #если слово уже ранее было в первом столбце(в какой-либо из строк)
-            row.cells[1].text = str(int(row.cells[1].text) + 1) #то к значению во втором слолбце мы просто добавляем 1
-            break #и выходим из этого цикла, чтобы взять новое слово
+#создаем переменную с количеством слов
+total_words = len(filtered_words)
 
-        else:
-            a += 1 #если нету, то проходим все строки до конца
+for word, count in word_counts.items(): #проходим по всем значениям 
+    percentage = (count / total_words) * 100 #создаем переменную, которая будет отобращать частоту ва процентах
+    new_row = table.add_row() #создаем новую строчку
+    new_row.cells[0].text = word #заполняем первую ячейку
+    new_row.cells[1].text = str(count) #вторую
+    new_row.cells[2].text = str(percentage) #третью
 
-    if a == len(table.rows): #проверяем, если программа прошла все столбцы, то такого слова в таблице нету
+doc.save('table.docx') #сохраняем файл с таблицей
 
-        new_row = table.add_row() #мы добавляем новую строку
-        new_row.cells[0].text = word #в первую коллонку добавляем само слово
-        new_row.cells[1].text = '1' #а во вторую 1, чтобы потом прибавлять к этому значению
-
-for row in table.rows[1:]: #заново проходим все строки кроме первой, чтобы заболнить 3 столбец таблицы
-    row.cells[2].text = str(int(row.cells[1].text)/len(text_word)*100) #заполняем его
-
-#фильтруем текст, оставляем только маленькие строчные буквы
+#фильтруем текст, оставляем только маленькие русские строчные буквы
 filtered_text = ''.join(filter(lambda x: 'а' <= x <= 'я', text.lower()))
 
 #считаем количество каждой буквы
@@ -81,5 +66,3 @@ plt.grid(axis='y')
 # Отображаем график
 plt.tight_layout()
 plt.show()
-
-doc.save('table.docx')
